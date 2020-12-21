@@ -1,3 +1,5 @@
+//https://www.instructables.com/Reading-DC-Fan-RPM-With-Arduino/
+
 //project done by www.theorycircuit.com
 //code by Crenn from http://thebestcasescenario.com  thank you!
 //Varibles used for calculations
