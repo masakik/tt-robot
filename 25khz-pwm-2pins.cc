@@ -1,3 +1,5 @@
+//https://forum.arduino.cc/index.php?topic=633800.0
+
 //PWM output @ 25 kHz, only on pins 9 and 10.
 // Output value should be between 0 and 320, inclusive.
 void analogWrite25k(int pin, int value)
