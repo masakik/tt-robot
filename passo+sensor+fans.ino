@@ -1,0 +1,183 @@
+// Include the library
+#include <FanController.h>
+#include <AccelStepper.h>
+
+// Sensor de bola com modulo infravermelho ****************
+#define BALL_FREQ 45 // bolas por minuto
+#define BALL_DEBOUNCE_DELAY 100    // the debounce time (ms); increase if the output flickers
+
+// o sensor envia LOW se detectou bola, então a lógica é invertida
+#define BALL_PIN 6
+
+unsigned int ball_interval = 60000 / BALL_FREQ;
+unsigned long ball_prev_time = millis();
+unsigned long ball_current_time;
+int ball_prev_state = 0;
+int ball_counter = 0;
+
+// Motores top e under spin ********************************
+
+// Sensor wire is plugged into port 2 on the Arduino.
+// For a list of available pins on your board,
+// please refer to: https://www.arduino.cc/en/Reference/AttachInterrupt
+#define SENSOR_PIN 2
+#define SENSOR_PIN2 3
+
+// Choose a threshold in milliseconds between readings.
+// A smaller value will give more updated results,
+// while a higher value will give more accurate and smooth readings
+#define SENSOR_THRESHOLD 1000
+
+// PWM pin (4th on 4 pin fans)
+#define TOP_PWM_PIN 9
+#define UNDER_PWM_PIN 10
+
+FanController top(SENSOR_PIN, SENSOR_THRESHOLD, TOP_PWM_PIN);
+FanController under(SENSOR_PIN2, SENSOR_THRESHOLD, UNDER_PWM_PIN);
+
+// motor de passo ***************************************
+#define stepPin 4
+#define dirPin 5
+
+// pino do botão de pausar o ballFeeder
+#define FEEDER_PAUSE_PIN 8
+
+// velocidade de rotação (em pps)
+#define SPEED 250
+
+AccelStepper feeder(AccelStepper::DRIVER, stepPin, dirPin);
+
+// timers *************************************************
+// timer do serialprint
+unsigned long timer1 = millis();
+
+// timer sem uso por enquanto
+unsigned long timer2 = millis();
+
+// ********************************************************
+void setup(void)
+{
+  // start serial port
+  Serial.begin(9600);
+  Serial.println("Fan Controller Library Demo");
+
+  // fan
+  top.begin();
+  under.begin();
+
+  // Stepper
+  feeder.setMaxSpeed(1000.0);
+  feeder.setSpeed(SPEED);
+
+  pinMode(FEEDER_PAUSE_PIN, INPUT_PULLUP);
+
+  // sensor de bola
+  pinMode(BALL_PIN, INPUT);
+}
+
+/*
+   Main function
+*/
+void loop(void)
+{
+  printSerialEach(5000);
+  poolSerialRead();
+  poolBallSensor();
+  poolBallFeeder();
+  ballFeedEach(ball_interval);
+}
+
+/**
+   Verifica o sensor de bola se foi lançado ou não
+   Como não tem interrupção disponível utilizou-se uma variável de estado.
+   O lancamento é na borda de subida.
+   Como a lógica é invertida vamos corrigir isso na leitura.
+   Incrementa o contador de bolas 
+   (Utiliza debounce para minimizar repeticoes mas parece estar com problemas)
+*/
+void poolBallSensor() {
+  // verifica se lancou bola
+  if (!digitalRead(BALL_PIN) != ball_prev_state) {
+    if (ball_prev_state == LOW) {
+      // vamos fazer o debounce
+      if (millis() - ball_current_time > BALL_DEBOUNCE_DELAY) {
+        ball_prev_state = HIGH;
+        ball_current_time = millis();
+        ball_counter ++;
+        Serial.print("Contador de bolas: ");
+        Serial.println(ball_counter);
+      }
+    } else {
+      ball_prev_state = LOW;
+    }
+  }
+}
+
+/**
+ * Lança bola a cada intervalo de tempo com a opção de pausa por botão
+ */
+void ballFeedEach(int ball_interval) {
+  // vamos verificar o botão de pause && o intervalo de lançamento
+  if (digitalRead(FEEDER_PAUSE_PIN) && ((millis() - ball_prev_time) > ball_interval)) {
+    // se passou intervalo gira
+    feeder.setSpeed(SPEED);
+    ball_prev_time = ball_current_time;
+    return true;
+  }
+  // senão para de girar
+  feeder.setSpeed(0);
+}
+
+void poolBallFeeder() {
+  feeder.runSpeed();
+}
+
+void printSerialEach(int interval) {
+
+  if ((millis() - timer1) > interval) {
+    timer1 = millis();
+
+    Serial.print("TOP(");
+    Serial.print(top.getDutyCycle());
+    Serial.print("%) ");
+    Serial.print(top.getSpeed());
+    Serial.print("RPM");
+
+    Serial.print("; UNDER(");
+    Serial.print(under.getDutyCycle());
+    Serial.print("%) ");
+    Serial.print(under.getSpeed());
+    Serial.print("RPM");
+
+    Serial.print("; POS ");
+    Serial.print(feeder.currentPosition());
+
+    Serial.println("");
+  }
+}
+
+void poolSerialRead() {
+  // Get new speed from Serial (0-100%)
+  if (Serial.available() > 1) {
+    // Parse speed
+    int input = Serial.parseInt();
+
+    // dezena é top e unidade é under
+    int top_in = max(min((input / 10 % 10) * 10, 100), 0) + 10;
+    int under_in = max(min((input % 10) * 10, 100), 0) + 10;
+
+    // Constrain a 0-100 range
+    //byte target = max(min(input*10, 100), 0);
+
+    // Print obtained value
+    Serial.print("Setting duty cycle: top ");
+    Serial.println(top_in, DEC);
+    Serial.print("Setting duty cycle: %, under ");
+    Serial.print(under_in, DEC);
+    Serial.println("%");
+
+    // Set fan duty cycle
+    top.setDutyCycle(top_in);
+    under.setDutyCycle(under_in);
+  }
+}
