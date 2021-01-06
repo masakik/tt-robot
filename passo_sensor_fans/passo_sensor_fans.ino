@@ -1,19 +1,21 @@
 // Include the library
 #include <FanController.h>
 #include <AccelStepper.h>
+#include <Cmd.h>
 
 // Sensor de bola com modulo infravermelho ****************
-#define BALL_FREQ 45 // bolas por minuto
-#define BALL_DEBOUNCE_DELAY 100    // the debounce time (ms); increase if the output flickers
+unsigned int ball_freq = 60;    // bolas por minuto
+#define BALL_DEBOUNCE_DELAY 100 // the debounce time (ms); increase if the output flickers
 
 // o sensor envia LOW se detectou bola, então a lógica é invertida
 #define BALL_PIN 6
 
-unsigned int ball_interval = 60000 / BALL_FREQ;
+unsigned int ball_interval = 60000 / ball_freq;
 unsigned long ball_prev_time = millis();
 unsigned long ball_current_time;
 int ball_prev_state = 0;
 int ball_counter = 0;
+bool ball_soft_pause = false;
 
 // Motores top e under spin ********************************
 
@@ -73,6 +75,15 @@ void setup(void)
 
   // sensor de bola
   pinMode(BALL_PIN, INPUT);
+
+  // cmdSerial
+  cmdInit(&Serial);
+  cmdAdd("help", cmdHelp);
+  cmdAdd("freq", cmdUpdateFreq);
+  cmdAdd("pause", cmdFeederPause);
+  cmdAdd("cont", cmdFeederCont);
+  cmdAdd("status", cmdStatus);
+
 }
 
 /*
@@ -80,45 +91,108 @@ void setup(void)
 */
 void loop(void)
 {
-  printSerialEach(5000);
-  poolSerialRead();
-  poolBallSensor();
-  poolBallFeeder();
+  pollCmd();
+  //printSerialEach(5000);
+  //pollSerialRead();
+  pollBallSensor();
+  pollBallFeeder();
   ballFeedEach(ball_interval);
 }
+
+void pollCmd()
+{
+  cmdPoll();
+}
+
+void cmdHelp(int arg_cnt, char **args)
+{
+  //Stream *s = cmdGetStream();
+  Serial.println("freq 20..90");
+  Serial.println("status");
+  Serial.println("pause");
+  Serial.println("cont");
+}
+
+void cmdUpdateFreq(int arg_cnt, char **args)
+{
+  if (arg_cnt > 1) {
+    cmdGetStream()->println("Hello world.");
+    ball_freq = cmdStr2Num(args[1], 10);
+    ball_interval = 60000 / ball_freq;
+  }
+  Serial.print("freq ");
+  Serial.println(ball_freq);
+}
+
+void cmdFeederPause(int arg_cnt, char **args)
+{
+  ball_soft_pause = true;
+}
+
+void cmdFeederCont(int arg_cnt, char **args)
+{
+  ball_soft_pause = false;
+}
+
+void cmdStatus(int arg_cnt, char **args) {
+
+  Serial.print("run ");
+  Serial.println(digitalRead(FEEDER_PAUSE_PIN) && !ball_soft_pause);
+
+  Serial.print("count ");
+  Serial.println(ball_counter);
+
+  Serial.print("freq ");
+  Serial.println(ball_freq);
+
+  Serial.print("top ");
+  Serial.println(top.getDutyCycle());
+
+  Serial.print("under ");
+  Serial.println(under.getDutyCycle());
+}
+
 
 /**
    Verifica o sensor de bola se foi lançado ou não
    Como não tem interrupção disponível utilizou-se uma variável de estado.
    O lancamento é na borda de subida.
    Como a lógica é invertida vamos corrigir isso na leitura.
-   Incrementa o contador de bolas 
+   Incrementa o contador de bolas
    (Utiliza debounce para minimizar repeticoes mas parece estar com problemas)
 */
-void poolBallSensor() {
+void pollBallSensor()
+{
   // verifica se lancou bola
-  if (!digitalRead(BALL_PIN) != ball_prev_state) {
-    if (ball_prev_state == LOW) {
+  if (!digitalRead(BALL_PIN) != ball_prev_state)
+  {
+    if (ball_prev_state == LOW)
+    {
       // vamos fazer o debounce
-      if (millis() - ball_current_time > BALL_DEBOUNCE_DELAY) {
+      if (millis() - ball_current_time > BALL_DEBOUNCE_DELAY)
+      {
         ball_prev_state = HIGH;
         ball_current_time = millis();
-        ball_counter ++;
-        Serial.print("Contador de bolas: ");
-        Serial.println(ball_counter);
+        ball_counter++;
+        //Serial.print("Contador de bolas: ");
+        //Serial.println(ball_counter);
       }
-    } else {
+    }
+    else
+    {
       ball_prev_state = LOW;
     }
   }
 }
 
 /**
- * Lança bola a cada intervalo de tempo com a opção de pausa por botão
- */
-void ballFeedEach(int ball_interval) {
-  // vamos verificar o botão de pause && o intervalo de lançamento
-  if (digitalRead(FEEDER_PAUSE_PIN) && ((millis() - ball_prev_time) > ball_interval)) {
+   Lança bola a cada intervalo de tempo com a opção de pausa por botão
+*/
+void ballFeedEach(int ball_interval)
+{
+  // vamos verificar o botão de pause && o intervalo de lançamento && soft pause
+  if (digitalRead(FEEDER_PAUSE_PIN) && ((millis() - ball_prev_time) > ball_interval) && !ball_soft_pause)
+  {
     // se passou intervalo gira
     feeder.setSpeed(SPEED);
     ball_prev_time = ball_current_time;
@@ -128,13 +202,16 @@ void ballFeedEach(int ball_interval) {
   feeder.setSpeed(0);
 }
 
-void poolBallFeeder() {
+void pollBallFeeder()
+{
   feeder.runSpeed();
 }
 
-void printSerialEach(int interval) {
+void printSerialEach(int interval)
+{
 
-  if ((millis() - timer1) > interval) {
+  if ((millis() - timer1) > interval)
+  {
     timer1 = millis();
 
     Serial.print("TOP(");
@@ -156,9 +233,11 @@ void printSerialEach(int interval) {
   }
 }
 
-void poolSerialRead() {
+void pollSerialRead()
+{
   // Get new speed from Serial (0-100%)
-  if (Serial.available() > 1) {
+  if (Serial.available() > 1)
+  {
     // Parse speed
     int input = Serial.parseInt();
 
