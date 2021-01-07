@@ -46,7 +46,7 @@ FanController under(SENSOR_PIN2, SENSOR_THRESHOLD, UNDER_PWM_PIN);
 #define FEEDER_PAUSE_PIN 8
 
 // velocidade de rotação (em pps)
-#define SPEED 250
+#define SPEED 200
 
 AccelStepper feeder(AccelStepper::DRIVER, stepPin, dirPin);
 
@@ -86,10 +86,10 @@ void setup(void)
   cmdAdd("status", cmdStatus);
 
 
-// timer
-timerPrintStatus.setInterval(10000);
-timerPrintStatus.setCallback(printStatus);
-timerPrintStatus.start();
+  // timer
+  timerPrintStatus.setInterval(10000);
+  timerPrintStatus.setCallback(printStatus);
+  timerPrintStatus.start();
 }
 
 /*
@@ -97,18 +97,11 @@ timerPrintStatus.start();
 */
 void loop(void)
 {
-  pollCmd();
-  timerPrintStatus.update();
-  //printSerialEach(5000);
-  //pollSerialRead();
-  pollBallSensor();
-  pollBallFeeder();
-  ballFeedEach(ball_interval);
-}
-
-void pollCmd()
-{
   cmdPoll();
+  timerPrintStatus.update();
+  pollBallSensor();
+  feeder.runSpeed();
+  ballFeedEach(ball_interval);
 }
 
 void cmdHelp(int arg_cnt, char **args)
@@ -210,63 +203,4 @@ void ballFeedEach(int ball_interval)
   }
   // senão para de girar
   feeder.setSpeed(0);
-}
-
-void pollBallFeeder()
-{
-  feeder.runSpeed();
-}
-
-void printSerialEach(int interval)
-{
-
-  if ((millis() - timer1) > interval)
-  {
-    timer1 = millis();
-
-    Serial.print("TOP(");
-    Serial.print(top.getDutyCycle());
-    Serial.print("%) ");
-    Serial.print(top.getSpeed());
-    Serial.print("RPM");
-
-    Serial.print("; UNDER(");
-    Serial.print(under.getDutyCycle());
-    Serial.print("%) ");
-    Serial.print(under.getSpeed());
-    Serial.print("RPM");
-
-    Serial.print("; POS ");
-    Serial.print(feeder.currentPosition());
-
-    Serial.println("");
-  }
-}
-
-void pollSerialRead()
-{
-  // Get new speed from Serial (0-100%)
-  if (Serial.available() > 1)
-  {
-    // Parse speed
-    int input = Serial.parseInt();
-
-    // dezena é top e unidade é under
-    int top_in = max(min((input / 10 % 10) * 10, 100), 0) + 10;
-    int under_in = max(min((input % 10) * 10, 100), 0) + 10;
-
-    // Constrain a 0-100 range
-    //byte target = max(min(input*10, 100), 0);
-
-    // Print obtained value
-    Serial.print("Setting duty cycle: top ");
-    Serial.println(top_in, DEC);
-    Serial.print("Setting duty cycle: %, under ");
-    Serial.print(under_in, DEC);
-    Serial.println("%");
-
-    // Set fan duty cycle
-    top.setDutyCycle(top_in);
-    under.setDutyCycle(under_in);
-  }
 }
