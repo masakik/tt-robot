@@ -1,8 +1,9 @@
 // Include the library
-#include <FanController.h>
-#include <AccelStepper.h>
-#include <Cmd.h>
-#include <timer.h>
+#include "FanController.h"
+#include "AccelStepper.h"
+#include "Cmd.h"
+#include "timer.h"
+#include "timerManager.h"
 
 // Sensor de bola com modulo infravermelho ****************
 unsigned int ball_freq = 60;    // bolas por minuto
@@ -56,6 +57,7 @@ unsigned long timer1 = millis();
 
 // timer sem uso por enquanto
 Timer timerPrintStatus;
+Timer timerBallFeed;
 
 // ********************************************************
 void setup(void)
@@ -89,7 +91,8 @@ void setup(void)
   // timer
   timerPrintStatus.setInterval(10000);
   timerPrintStatus.setCallback(printStatus);
-  timerPrintStatus.start();
+
+  TimerManager::instance().start();
 }
 
 /*
@@ -98,7 +101,7 @@ void setup(void)
 void loop(void)
 {
   cmdPoll();
-  timerPrintStatus.update();
+  TimerManager::instance().update();
   pollBallSensor();
   feeder.runSpeed();
   ballFeedEach(ball_interval);
@@ -177,8 +180,6 @@ void pollBallSensor()
         ball_prev_state = HIGH;
         ball_current_time = millis();
         ball_counter++;
-        //Serial.print("Contador de bolas: ");
-        //Serial.println(ball_counter);
       }
     }
     else
@@ -201,6 +202,9 @@ void ballFeedEach(int ball_interval)
     ball_prev_time = ball_current_time;
     return;
   }
-  // senão para de girar
-  feeder.setSpeed(0);
+  if (millis() - ball_prev_time > BALL_DEBOUNCE_DELAY) {
+    // senão para de girar
+    feeder.setSpeed(0);
+  }
+
 }
