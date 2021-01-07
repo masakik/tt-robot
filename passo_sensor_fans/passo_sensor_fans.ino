@@ -196,7 +196,7 @@ void ballFeedEach(int ball_interval)
     // se passou intervalo gira
     feeder.setSpeed(SPEED);
     ball_prev_time = ball_current_time;
-    return true;
+    return;
   }
   // senão para de girar
   feeder.setSpeed(0);
