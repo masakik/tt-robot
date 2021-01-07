@@ -2,10 +2,11 @@
 #include <FanController.h>
 #include <AccelStepper.h>
 #include <Cmd.h>
+#include <timer.h>
 
 // Sensor de bola com modulo infravermelho ****************
 unsigned int ball_freq = 60;    // bolas por minuto
-#define BALL_DEBOUNCE_DELAY 100 // the debounce time (ms); increase if the output flickers
+#define BALL_DEBOUNCE_DELAY 200 // the debounce time (ms); increase if the output flickers
 
 // o sensor envia LOW se detectou bola, então a lógica é invertida
 #define BALL_PIN 6
@@ -54,7 +55,7 @@ AccelStepper feeder(AccelStepper::DRIVER, stepPin, dirPin);
 unsigned long timer1 = millis();
 
 // timer sem uso por enquanto
-unsigned long timer2 = millis();
+Timer timerPrintStatus;
 
 // ********************************************************
 void setup(void)
@@ -84,6 +85,11 @@ void setup(void)
   cmdAdd("cont", cmdFeederCont);
   cmdAdd("status", cmdStatus);
 
+
+// timer
+timerPrintStatus.setInterval(10000);
+timerPrintStatus.setCallback(printStatus);
+timerPrintStatus.start();
 }
 
 /*
@@ -92,6 +98,7 @@ void setup(void)
 void loop(void)
 {
   pollCmd();
+  timerPrintStatus.update();
   //printSerialEach(5000);
   //pollSerialRead();
   pollBallSensor();
@@ -135,7 +142,10 @@ void cmdFeederCont(int arg_cnt, char **args)
 }
 
 void cmdStatus(int arg_cnt, char **args) {
+  printStatus();
+}
 
+void printStatus() {
   Serial.print("run ");
   Serial.println(digitalRead(FEEDER_PAUSE_PIN) && !ball_soft_pause);
 
