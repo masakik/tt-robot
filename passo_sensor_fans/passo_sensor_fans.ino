@@ -7,15 +7,14 @@
 
 // Sensor de bola com modulo infravermelho ****************
 unsigned int ball_freq = 60;    // bolas por minuto
-#define BALL_DEBOUNCE_DELAY 200 // the debounce time (ms); increase if the output flickers
 
-// o sensor envia LOW se detectou bola, então a lógica é invertida
-#define BALL_PIN 6
+#define BALL_DEBOUNCE_DELAY 250 // the debounce time (ms)
+#define BALL_PIN 6              // o sensor envia LOW se detectou bola, então a lógica é invertida
 
 unsigned int ball_interval = 60000 / ball_freq;
 unsigned long ball_prev_time = millis();
 unsigned long ball_current_time;
-int ball_prev_state = 0;
+bool ball_prev_state = 0;
 int ball_counter = 0;
 bool ball_soft_pause = false;
 
@@ -42,22 +41,13 @@ FanController under(SENSOR_PIN2, SENSOR_THRESHOLD, UNDER_PWM_PIN);
 // motor de passo ***************************************
 #define stepPin 4
 #define dirPin 5
-
-// pino do botão de pausar o ballFeeder
-#define FEEDER_PAUSE_PIN 8
-
-// velocidade de rotação (em pps)
-#define SPEED 200
+#define FEEDER_PAUSE_PIN 8 // pino do botão de pausar o ballFeeder
+#define SPEED 200 // velocidade nominal de rotação (em pps)
 
 AccelStepper feeder(AccelStepper::DRIVER, stepPin, dirPin);
 
 // timers *************************************************
-// timer do serialprint
-unsigned long timer1 = millis();
-
-// timer sem uso por enquanto
 Timer timerPrintStatus;
-Timer timerBallFeed;
 
 // ********************************************************
 void setup(void)
@@ -73,7 +63,6 @@ void setup(void)
   // Stepper
   feeder.setMaxSpeed(1000.0);
   feeder.setSpeed(SPEED);
-
   pinMode(FEEDER_PAUSE_PIN, INPUT_PULLUP);
 
   // sensor de bola
@@ -87,39 +76,41 @@ void setup(void)
   cmdAdd("cont", cmdFeederCont);
   cmdAdd("status", cmdStatus);
 
-
-  // timer
+  // timers
   timerPrintStatus.setInterval(10000);
   timerPrintStatus.setCallback(printStatus);
 
   TimerManager::instance().start();
 }
 
-/*
-   Main function
-*/
+// Main function ***************************
 void loop(void)
 {
   cmdPoll();
   TimerManager::instance().update();
-  pollBallSensor();
   feeder.runSpeed();
+  pollBallSensor();
   ballFeedEach(ball_interval);
 }
 
 void cmdHelp(int arg_cnt, char **args)
 {
-  //Stream *s = cmdGetStream();
-  Serial.println("freq 20..90");
   Serial.println("status");
   Serial.println("pause");
   Serial.println("cont");
+  Serial.println("freq 15..90 (bolas por minuto)");
+  
+  // futuros
+  Serial.println("top 0..100 (%)");
+  Serial.println("under 0..100 (%)");
+  Serial.println("elev -30..30 (graus)");
+  Serial.println("azim -30..30 (graus)");
 }
 
 void cmdUpdateFreq(int arg_cnt, char **args)
 {
-  if (arg_cnt > 1) {
-    cmdGetStream()->println("Hello world.");
+  if (arg_cnt > 1)
+  {
     ball_freq = cmdStr2Num(args[1], 10);
     ball_interval = 60000 / ball_freq;
   }
@@ -137,11 +128,13 @@ void cmdFeederCont(int arg_cnt, char **args)
   ball_soft_pause = false;
 }
 
-void cmdStatus(int arg_cnt, char **args) {
+void cmdStatus(int arg_cnt, char **args)
+{
   printStatus();
 }
 
-void printStatus() {
+void printStatus()
+{
   Serial.print("run ");
   Serial.println(digitalRead(FEEDER_PAUSE_PIN) && !ball_soft_pause);
 
@@ -158,7 +151,6 @@ void printStatus() {
   Serial.println(under.getDutyCycle());
 }
 
-
 /**
    Verifica o sensor de bola se foi lançado ou não
    Como não tem interrupção disponível utilizou-se uma variável de estado.
@@ -174,13 +166,9 @@ void pollBallSensor()
   {
     if (ball_prev_state == LOW)
     {
-      // vamos fazer o debounce
-      if (millis() - ball_current_time > BALL_DEBOUNCE_DELAY)
-      {
-        ball_prev_state = HIGH;
-        ball_current_time = millis();
-        ball_counter++;
-      }
+      ball_prev_state = HIGH;
+      ball_current_time = millis();
+      ball_counter++;
     }
     else
     {
@@ -202,9 +190,12 @@ void ballFeedEach(int ball_interval)
     ball_prev_time = ball_current_time;
     return;
   }
-  if (millis() - ball_prev_time > BALL_DEBOUNCE_DELAY) {
+
+  // depois de começar a andar vamos aguardar um pouco antes de parar
+  // assim a bola se afasta do sensor evitando o bounce
+  if (millis() - ball_prev_time > BALL_DEBOUNCE_DELAY)
+  {
     // senão para de girar
     feeder.setSpeed(0);
   }
-
 }
