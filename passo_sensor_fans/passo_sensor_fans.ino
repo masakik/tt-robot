@@ -51,6 +51,9 @@ AccelStepper feeder(AccelStepper::DRIVER, stepPin, dirPin);
 // timers *************************************************
 Timer timerPrintStatus;
 
+// Auxiliar para Serial.print
+char buffer[100];
+
 // ********************************************************
 void setup(void)
 {
@@ -77,10 +80,14 @@ void setup(void)
   cmdAdd("pause", cmdFeederPause);
   cmdAdd("cont", cmdFeederCont);
   cmdAdd("status", cmdStatus);
+  cmdAdd("top", cmdTopSpin);
+  cmdAdd("under", cmdUnderSpin);
+  //cmdAdd("elev", cmdElevation);
+  //cmdAdd("azim", cmdAzimute);
 
   // timers
   timerPrintStatus.setInterval(10000);
-  timerPrintStatus.setCallback(printStatus);
+  timerPrintStatus.setCallback(cmdStatus);
 
   TimerManager::instance().start();
 }
@@ -102,10 +109,10 @@ void cmdHelp(int arg_cnt, char **args)
   Serial.println("pause");
   Serial.println("cont");
   Serial.println("freq 15..90 (bolas por minuto)");
-
-  // futuros
   Serial.println("top 0..100 (%)");
   Serial.println("under 0..100 (%)");
+
+  // futuros
   Serial.println("elev -30..30 (graus)");
   Serial.println("azim -30..30 (graus)");
 }
@@ -114,11 +121,31 @@ void cmdUpdateFreq(int arg_cnt, char **args)
 {
   if (arg_cnt > 1)
   {
-    ball_freq = cmdStr2Num(args[1], 10);
+    ball_freq = max(min(cmdStr2Num(args[1], 20), 90), 0); // min=20, max=90
     ball_interval = 60000 / ball_freq;
   }
   Serial.print("freq ");
   Serial.println(ball_freq);
+}
+
+void cmdTopSpin(int arg_cnt, char **args)
+{
+  if (arg_cnt > 1)
+  {
+    top.setDutyCycle(max(min(cmdStr2Num(args[1], 10), 100), 0));
+  }
+  sprintf(buffer, "Top %i%%", top.getDutyCycle());
+  Serial.println(buffer);
+}
+
+void cmdUnderSpin(int arg_cnt, char **args)
+{
+  if (arg_cnt > 1)
+  {
+    under.setDutyCycle(max(min(cmdStr2Num(args[1], 10), 100), 0));
+  }
+  sprintf(buffer, "Under %i%%", under.getDutyCycle());
+  Serial.println(buffer);
 }
 
 void cmdFeederPause(int arg_cnt, char **args)
@@ -133,25 +160,16 @@ void cmdFeederCont(int arg_cnt, char **args)
 
 void cmdStatus(int arg_cnt, char **args)
 {
-  printStatus();
+  sprintf(buffer, "run: %i; count %i; freq %i; top %i%%-%iRPM; under %i%%-%iRPM",
+          !ball_soft_pause, ball_counter, ball_freq,
+          top.getDutyCycle(), top.getSpeed(),
+          under.getDutyCycle(), under.getSpeed()
+         );
+  Serial.println(buffer);
 }
 
-void printStatus()
-{
-  Serial.print("run ");
-  Serial.println(digitalRead(FEEDER_PAUSE_PIN) && !ball_soft_pause);
-
-  Serial.print("count ");
-  Serial.println(ball_counter);
-
-  Serial.print("freq ");
-  Serial.println(ball_freq);
-
-  Serial.print("top ");
-  Serial.println(top.getDutyCycle());
-
-  Serial.print("under ");
-  Serial.println(under.getDutyCycle());
+void cmdStatus(){
+  cmdStatus(0,0);
 }
 
 /**
@@ -172,6 +190,7 @@ void pollBallSensor()
       ball_prev_state = HIGH;
       ball_current_time = millis();
       ball_counter++;
+      Serial.println(ball_counter);
     }
     else
     {
@@ -212,5 +231,4 @@ void ballFeedEach(int ball_interval)
     // assim a bola se afasta do sensor evitando ler a mesma bola
     feeder.setSpeed(0);
   }
-
 }
