@@ -76,7 +76,7 @@ void setup(void)
   // cmdSerial
   cmdInit(&Serial);
   cmdAdd("help", cmdHelp);
-  cmdAdd("freq", cmdUpdateFreq);
+  cmdAdd("freq", cmdFreq);
   cmdAdd("pause", cmdFeederPause);
   cmdAdd("cont", cmdFeederCont);
   cmdAdd("status", cmdStatus);
@@ -117,11 +117,11 @@ void cmdHelp(int arg_cnt, char **args)
   Serial.println("azim -30..30 (graus)");
 }
 
-void cmdUpdateFreq(int arg_cnt, char **args)
+void cmdFreq(int arg_cnt, char **args)
 {
   if (arg_cnt > 1)
   {
-    ball_freq = max(min(cmdStr2Num(args[1], 20), 90), 0); // min=20, max=90
+    ball_freq = max(min(cmdStr2Num(args[1], 10), 90), 20); // min=20, max=90
     ball_interval = 60000 / ball_freq;
   }
   Serial.print("freq ");
