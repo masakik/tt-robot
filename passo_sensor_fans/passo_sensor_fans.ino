@@ -99,8 +99,8 @@ void loop(void)
   TimerManager::instance().update();
   feeder.runSpeed();
   pollBallSensor();
-  ballFeedEach(ball_interval);
   poolPauseBtn();
+  ballFeedEach(ball_interval);
 }
 
 void cmdHelp(int arg_cnt, char **args)
@@ -168,8 +168,8 @@ void cmdStatus(int arg_cnt, char **args)
   Serial.println(buffer);
 }
 
-void cmdStatus(){
-  cmdStatus(0,0);
+void cmdStatus() {
+  cmdStatus(0, 0);
 }
 
 /**
