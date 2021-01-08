@@ -6,7 +6,7 @@
 #include "timerManager.h"
 
 // Sensor de bola com modulo infravermelho ****************
-unsigned int ball_freq = 60;    // bolas por minuto
+unsigned int ball_freq = 60; // bolas por minuto
 
 #define BALL_DEBOUNCE_DELAY 250 // the debounce time (ms)
 #define BALL_PIN 6              // o sensor envia LOW se detectou bola, então a lógica é invertida
@@ -41,7 +41,9 @@ FanController under(SENSOR_PIN2, SENSOR_THRESHOLD, UNDER_PWM_PIN);
 // motor de passo ***************************************
 #define stepPin 4
 #define dirPin 5
-#define FEEDER_PAUSE_PIN 8 // pino do botão de pausar o ballFeeder
+#define FEEDER_PAUSE_PIN 8     // pino do botão de pausar o ballFeeder
+#define PAUSE_BTN_DEBOUNCE 500 // debounce do botão de pause (ms)
+unsigned long pause_btn_prev_time = millis();
 #define SPEED 200 // velocidade nominal de rotação (em pps)
 
 AccelStepper feeder(AccelStepper::DRIVER, stepPin, dirPin);
@@ -91,6 +93,7 @@ void loop(void)
   feeder.runSpeed();
   pollBallSensor();
   ballFeedEach(ball_interval);
+  poolPauseBtn();
 }
 
 void cmdHelp(int arg_cnt, char **args)
@@ -99,7 +102,7 @@ void cmdHelp(int arg_cnt, char **args)
   Serial.println("pause");
   Serial.println("cont");
   Serial.println("freq 15..90 (bolas por minuto)");
-  
+
   // futuros
   Serial.println("top 0..100 (%)");
   Serial.println("under 0..100 (%)");
@@ -178,24 +181,36 @@ void pollBallSensor()
 }
 
 /**
-   Lança bola a cada intervalo de tempo com a opção de pausa por botão
+   Verifica se o botão de pause foi pressionado e muda o estado de pausa
+   Como ele é pull_up, compara com LOW
+*/
+void poolPauseBtn()
+{
+  if ((digitalRead(FEEDER_PAUSE_PIN) == LOW) && (millis() - pause_btn_prev_time > PAUSE_BTN_DEBOUNCE))
+  {
+    ball_soft_pause = !ball_soft_pause;
+    pause_btn_prev_time = millis();
+    Serial.println("Botão de pausa pressionado");
+  }
+}
+
+/**
+   Lança bola a cada intervalo de tempo com a opção de pausa
 */
 void ballFeedEach(int ball_interval)
 {
-  // vamos verificar o botão de pause && o intervalo de lançamento && soft pause
-  if (digitalRead(FEEDER_PAUSE_PIN) && ((millis() - ball_prev_time) > ball_interval) && !ball_soft_pause)
+  // vamos verificar o intervalo de lançamento && soft pause
+  if (((millis() - ball_prev_time) > ball_interval) && !ball_soft_pause)
   {
     // se passou intervalo gira
     feeder.setSpeed(SPEED);
     ball_prev_time = ball_current_time;
-    return;
   }
-
-  // depois de começar a andar vamos aguardar um pouco antes de parar
-  // assim a bola se afasta do sensor evitando o bounce
-  if (millis() - ball_prev_time > BALL_DEBOUNCE_DELAY)
+  else if (millis() - ball_prev_time > BALL_DEBOUNCE_DELAY)
   {
-    // senão para de girar
+    // depois de começar a girar vamos aguardar um pouco antes de parar
+    // assim a bola se afasta do sensor evitando ler a mesma bola
     feeder.setSpeed(0);
   }
+
 }
