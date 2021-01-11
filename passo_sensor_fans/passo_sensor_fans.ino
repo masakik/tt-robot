@@ -7,9 +7,11 @@
 
 // Sensor de bola com modulo infravermelho ****************
 unsigned int ball_freq = 60; // bolas por minuto
+#define BALL_FREQ_MIN 15
+#define BALL_FREQ_MAX 90
 
-#define BALL_DEBOUNCE_DELAY 250 // the debounce time (ms)
-#define BALL_PIN 6              // o sensor envia LOW se detectou bola, então a lógica é invertida
+#define BALL_SENSOR_PIN 6        // o sensor envia LOW se detectou bola, então a lógica é invertida
+#define BALL_SENSOR_DEBOUNCE 200 // debounce do sensor de bola (ms)
 
 unsigned int ball_interval = 60000 / ball_freq;
 unsigned long ball_prev_time = millis();
@@ -41,12 +43,14 @@ FanController under(SENSOR_PIN2, SENSOR_THRESHOLD, UNDER_PWM_PIN);
 // motor de passo ***************************************
 #define stepPin 4
 #define dirPin 5
-#define FEEDER_PAUSE_PIN 8     // pino do botão de pausar o ballFeeder
-#define PAUSE_BTN_DEBOUNCE 500 // debounce do botão de pause (ms)
-unsigned long pause_btn_prev_time = millis();
+#define FEEDER_DELAY 250 // continua girando por mais um tempo (ms)
 #define SPEED 200 // velocidade nominal de rotação (em pps)
-
+unsigned long pause_btn_prev_time = millis();
 AccelStepper feeder(AccelStepper::DRIVER, stepPin, dirPin);
+
+// Botão de pausa do feeder ******************************
+#define FEEDER_PAUSE_PIN 8     // pino do botão de pausar o ballFeeder
+#define FEEDER_PAUSE_DEBOUNCE 500 // debounce do botão de pause (ms)
 
 // timers *************************************************
 Timer timerPrintStatus;
@@ -71,7 +75,7 @@ void setup(void)
   pinMode(FEEDER_PAUSE_PIN, INPUT_PULLUP);
 
   // sensor de bola
-  pinMode(BALL_PIN, INPUT);
+  pinMode(BALL_SENSOR_PIN, INPUT);
 
   // cmdSerial
   cmdInit(&Serial);
@@ -108,7 +112,8 @@ void cmdHelp(int arg_cnt, char **args)
   Serial.println("status");
   Serial.println("pause");
   Serial.println("cont");
-  Serial.println("freq 15..90 (bolas por minuto)");
+  sprintf(buffer, "freq %i..%i (bolas por minuto)", BALL_FREQ_MIN, BALL_FREQ_MAX);
+  Serial.println(buffer);
   Serial.println("top 0..100 (%)");
   Serial.println("under 0..100 (%)");
 
@@ -121,7 +126,7 @@ void cmdFreq(int arg_cnt, char **args)
 {
   if (arg_cnt > 1)
   {
-    ball_freq = max(min(cmdStr2Num(args[1], 10), 90), 20); // min=20, max=90
+    ball_freq = max(min(cmdStr2Num(args[1], 10), BALL_FREQ_MAX), BALL_FREQ_MIN); // limita entre BALL_FREQ_MIN e BALL_FREQ_MAX
     ball_interval = 60000 / ball_freq;
   }
   Serial.print("freq ");
@@ -183,9 +188,9 @@ void cmdStatus() {
 void pollBallSensor()
 {
   // verifica se lancou bola
-  if (!digitalRead(BALL_PIN) != ball_prev_state)
+  if ((!digitalRead(BALL_SENSOR_PIN) != ball_prev_state))
   {
-    if (ball_prev_state == LOW)
+    if ((ball_prev_state == LOW)  & (millis() - ball_current_time > BALL_SENSOR_DEBOUNCE))
     {
       ball_prev_state = HIGH;
       ball_current_time = millis();
@@ -205,7 +210,7 @@ void pollBallSensor()
 */
 void poolPauseBtn()
 {
-  if ((digitalRead(FEEDER_PAUSE_PIN) == LOW) && (millis() - pause_btn_prev_time > PAUSE_BTN_DEBOUNCE))
+  if ((digitalRead(FEEDER_PAUSE_PIN) == LOW) && (millis() - pause_btn_prev_time > FEEDER_PAUSE_DEBOUNCE))
   {
     ball_soft_pause = !ball_soft_pause;
     pause_btn_prev_time = millis();
@@ -225,7 +230,7 @@ void ballFeedEach(int ball_interval)
     feeder.setSpeed(SPEED);
     ball_prev_time = ball_current_time;
   }
-  else if (millis() - ball_prev_time > BALL_DEBOUNCE_DELAY)
+  else if (millis() - ball_prev_time > FEEDER_DELAY)
   {
     // depois de começar a girar vamos aguardar um pouco antes de parar
     // assim a bola se afasta do sensor evitando ler a mesma bola
