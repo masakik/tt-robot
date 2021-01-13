@@ -41,12 +41,12 @@ FanController top(SENSOR_PIN, SENSOR_THRESHOLD, TOP_PWM_PIN);
 FanController under(SENSOR_PIN2, SENSOR_THRESHOLD, UNDER_PWM_PIN);
 
 // motor de passo ***************************************
-#define stepPin 4
-#define dirPin 5
+#define STEP_PIN 4
+#define DIR_PIN 5
 #define FEEDER_DELAY 250 // continua girando por mais um tempo (ms)
 #define SPEED 200 // velocidade nominal de rotação (em pps)
 unsigned long pause_btn_prev_time = millis();
-AccelStepper feeder(AccelStepper::DRIVER, stepPin, dirPin);
+AccelStepper feeder(AccelStepper::DRIVER, STEP_PIN, DIR_PIN);
 
 // Botão de pausa do feeder ******************************
 #define FEEDER_PAUSE_PIN 8     // pino do botão de pausar o ballFeeder
