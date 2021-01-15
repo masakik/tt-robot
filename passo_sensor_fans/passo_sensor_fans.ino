@@ -63,7 +63,7 @@ void setup(void)
 {
   // start serial port
   Serial.begin(9600);
-  Serial.println("Fan Controller Library Demo");
+  Serial.println("Table Tennis Robot");
 
   // fan
   top.begin();
@@ -80,6 +80,7 @@ void setup(void)
   // cmdSerial
   cmdInit(&Serial);
   cmdAdd("help", cmdHelp);
+  cmdAdd("pgm", cmdProgram);
   cmdAdd("freq", cmdFreq);
   cmdAdd("pause", cmdFeederPause);
   cmdAdd("cont", cmdFeederCont);
@@ -110,6 +111,7 @@ void loop(void)
 void cmdHelp(int arg_cnt, char **args)
 {
   Serial.println("status");
+  Serial.println("pgm 1..9");
   Serial.println("pause");
   Serial.println("cont");
   sprintf(buffer, "freq %i..%i (bolas por minuto)", BALL_FREQ_MIN, BALL_FREQ_MAX);
@@ -120,6 +122,17 @@ void cmdHelp(int arg_cnt, char **args)
   // futuros
   Serial.println("elev -30..30 (graus)");
   Serial.println("azim -30..30 (graus)");
+}
+
+void cmdProgram(int arg_cnt, char **args) 
+{
+  int pgm = 1;
+  if (arg_cnt > 1)
+  {
+    pgm = cmdStr2Num(args[1], 10);
+  }
+  Serial.print("pgm ");
+  Serial.println(pgm);
 }
 
 void cmdFreq(int arg_cnt, char **args)
@@ -215,6 +228,8 @@ void poolPauseBtn()
     ball_soft_pause = !ball_soft_pause;
     pause_btn_prev_time = millis();
     Serial.println("Botão de pausa pressionado");
+    Serial.print("run ");
+    Serial.println(!ball_soft_pause);
   }
 }
 
