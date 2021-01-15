@@ -1,16 +1,28 @@
 // Include the library
-#include "FanController.h"
+//#include "FanController.h"
 #include "AccelStepper.h"
 #include "Cmd.h"
 #include "timer.h"
 #include "timerManager.h"
+
+#include <Servo.h>
+
+// Servos *************************************************
+#define TOP_PIN 9
+#define UNDER_PIN 10
+#define AZIMUTE_PIN 11
+#define ELEVATION_PIN 12
+Servo azimute;
+Servo elevation;
+Servo top;
+Servo under;
 
 // Sensor de bola com modulo infravermelho ****************
 unsigned int ball_freq = 60; // bolas por minuto
 #define BALL_FREQ_MIN 15
 #define BALL_FREQ_MAX 90
 
-#define BALL_SENSOR_PIN 6        // o sensor envia LOW se detectou bola, então a lógica é invertida
+#define BALL_SENSOR_PIN A1        // o sensor envia LOW se detectou bola, então a lógica é invertida
 #define BALL_SENSOR_DEBOUNCE 200 // debounce do sensor de bola (ms)
 
 unsigned int ball_interval = 60000 / ball_freq;
@@ -25,31 +37,31 @@ bool ball_soft_pause = false;
 // Sensor wire is plugged into port 2 on the Arduino.
 // For a list of available pins on your board,
 // please refer to: https://www.arduino.cc/en/Reference/AttachInterrupt
-#define SENSOR_PIN 2
-#define SENSOR_PIN2 3
+//#define SENSOR_PIN 12
+//#define SENSOR_PIN2 13
 
 // Choose a threshold in milliseconds between readings.
 // A smaller value will give more updated results,
 // while a higher value will give more accurate and smooth readings
-#define SENSOR_THRESHOLD 1000
+//#define SENSOR_THRESHOLD 1000
 
 // PWM pin (4th on 4 pin fans)
-#define TOP_PWM_PIN 9
-#define UNDER_PWM_PIN 10
+//#define TOP_PWM_PIN 9
+//#define UNDER_PWM_PIN 10
 
-FanController top(SENSOR_PIN, SENSOR_THRESHOLD, TOP_PWM_PIN);
-FanController under(SENSOR_PIN2, SENSOR_THRESHOLD, UNDER_PWM_PIN);
+//FanController top(SENSOR_PIN, SENSOR_THRESHOLD, TOP_PWM_PIN);
+//FanController under(SENSOR_PIN2, SENSOR_THRESHOLD, UNDER_PWM_PIN);
 
 // motor de passo ***************************************
-#define STEP_PIN 4
-#define DIR_PIN 5
+#define STEP_PIN 2
+#define DIR_PIN 3
 #define FEEDER_DELAY 250 // continua girando por mais um tempo (ms)
 #define SPEED 200 // velocidade nominal de rotação (em pps)
 unsigned long pause_btn_prev_time = millis();
 AccelStepper feeder(AccelStepper::DRIVER, STEP_PIN, DIR_PIN);
 
 // Botão de pausa do feeder ******************************
-#define FEEDER_PAUSE_PIN 8     // pino do botão de pausar o ballFeeder
+#define FEEDER_PAUSE_PIN A0     // pino do botão de pausar o ballFeeder
 #define FEEDER_PAUSE_DEBOUNCE 500 // debounce do botão de pause (ms)
 
 // timers *************************************************
@@ -58,6 +70,16 @@ Timer timerPrintStatus;
 // Auxiliar para Serial.print
 char buffer[100];
 
+
+// Programação ********************************************
+
+typedef struct {
+  int top, under, elev, azim;
+} head;
+
+head pgm;
+head ps1_sp3_sn0 = {20, 20, 10, 10};
+
 // ********************************************************
 void setup(void)
 {
@@ -65,9 +87,18 @@ void setup(void)
   Serial.begin(9600);
   Serial.println("Table Tennis Robot");
 
+  // programa
+  pgm = ps1_sp3_sn0;
+
+  // servos
+  top.attach(TOP_PIN);
+  under.attach(UNDER_PIN);
+  azimute.attach(AZIMUTE_PIN);
+  elevation.attach(ELEVATION_PIN);
+
   // fan
-  top.begin();
-  under.begin();
+  //top.begin();
+  //under.begin();
 
   // Stepper
   feeder.setMaxSpeed(1000.0);
@@ -124,7 +155,7 @@ void cmdHelp(int arg_cnt, char **args)
   Serial.println("azim -30..30 (graus)");
 }
 
-void cmdProgram(int arg_cnt, char **args) 
+void cmdProgram(int arg_cnt, char **args)
 {
   int pgm = 1;
   if (arg_cnt > 1)
@@ -150,9 +181,9 @@ void cmdTopSpin(int arg_cnt, char **args)
 {
   if (arg_cnt > 1)
   {
-    top.setDutyCycle(max(min(cmdStr2Num(args[1], 10), 100), 0));
+    top.write(max(min(cmdStr2Num(args[1], 10), 100), 0));
   }
-  sprintf(buffer, "Top %i%%", top.getDutyCycle());
+  sprintf(buffer, "Top %i%%", top.read());
   Serial.println(buffer);
 }
 
@@ -160,9 +191,9 @@ void cmdUnderSpin(int arg_cnt, char **args)
 {
   if (arg_cnt > 1)
   {
-    under.setDutyCycle(max(min(cmdStr2Num(args[1], 10), 100), 0));
+    under.write(max(min(cmdStr2Num(args[1], 10), 100), 0));
   }
-  sprintf(buffer, "Under %i%%", under.getDutyCycle());
+  sprintf(buffer, "Under %i%%", under.read());
   Serial.println(buffer);
 }
 
@@ -178,10 +209,10 @@ void cmdFeederCont(int arg_cnt, char **args)
 
 void cmdStatus(int arg_cnt, char **args)
 {
-  sprintf(buffer, "run: %i; count %i; freq %i; top %i%%-%iRPM; under %i%%-%iRPM",
+  sprintf(buffer, "run: %i; count %i; freq %i; top %i%%; under %i%%",
           !ball_soft_pause, ball_counter, ball_freq,
-          top.getDutyCycle(), top.getSpeed(),
-          under.getDutyCycle(), under.getSpeed()
+          top.read(),
+          under.read()
          );
   Serial.println(buffer);
 }
@@ -208,7 +239,10 @@ void pollBallSensor()
       ball_prev_state = HIGH;
       ball_current_time = millis();
       ball_counter++;
-      Serial.println(ball_counter);
+
+      int azimute_degree = random(60, 120);
+      azimute.write(azimute_degree);
+      Serial.println(azimute_degree);
     }
     else
     {
