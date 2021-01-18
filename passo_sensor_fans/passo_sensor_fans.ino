@@ -227,7 +227,7 @@ void vccMonitor()
   {
     sum = sum + analogRead(VCC_MONITOR_PIN);
   }
-  vcc_monitor = map(sum / 20, 0, 1023, 0, 13000) * vcc_adj;
+  vcc_monitor = map(sum / 20, 0, 1023, 0, 13000) * cfg.vcc_adj;
 }
 
 
