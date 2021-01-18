@@ -126,8 +126,8 @@ void loop(void)
   TimerManager::instance().update();
   feeder.runSpeed();
   pollBallSensor();
-  poolPauseBtn();
-  ballFeedEach(ball_interval);
+  pollPauseBtn();
+  pollBallFeed();
 }
 
 void cmdHelp(int arg_cnt, char **args)
@@ -260,7 +260,7 @@ void pollBallSensor()
    Verifica se o botão de pause foi pressionado e muda o estado de pausa
    Como ele é pull_up, compara com LOW
 */
-void poolPauseBtn()
+void pollPauseBtn()
 {
   if ((digitalRead(FEEDER_PAUSE_PIN) == LOW) && (millis() - pause_btn_prev_time > FEEDER_PAUSE_DEBOUNCE))
   {
@@ -275,7 +275,7 @@ void poolPauseBtn()
 /**
    Lança bola a cada intervalo de tempo com a opção de pausa
 */
-void ballFeedEach(int ball_interval)
+void pollBallFeed()
 {
   // vamos verificar o intervalo de lançamento && soft pause
   if (((millis() - ball_prev_time) > ball_interval) && !ball_soft_pause)
