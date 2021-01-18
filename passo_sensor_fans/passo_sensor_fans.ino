@@ -20,7 +20,7 @@ unsigned int ball_freq = 60; // bolas por minuto
 #define BALL_FREQ_MIN 15
 #define BALL_FREQ_MAX 90
 
-#define BALL_SENSOR_PIN A1        // o sensor envia LOW se detectou bola, então a lógica é invertida
+#define BALL_SENSOR_PIN A1       // o sensor envia LOW se detectou bola, então a lógica é invertida
 #define BALL_SENSOR_DEBOUNCE 200 // debounce do sensor de bola (ms)
 
 unsigned int ball_interval = 60000 / ball_freq;
@@ -28,7 +28,7 @@ unsigned long ball_prev_time = millis();
 unsigned long ball_current_time;
 bool ball_prev_state = 0;
 unsigned int ball_counter = 0;
-bool ball_soft_pause = false;
+bool ball_soft_pause = true;
 
 // motor de passo ***************************************
 #define STEP_PIN 2
