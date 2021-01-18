@@ -1,10 +1,8 @@
 // Include the library
-//#include "FanController.h"
-#include "AccelStepper.h"
-#include "Cmd.h"
-#include "timer.h"
-#include "timerManager.h"
-
+#include <AccelStepper.h>
+#include <Cmd.h>
+#include <timer.h>
+#include <timerManager.h>
 #include <Servo.h>
 
 // Servos *************************************************
@@ -89,10 +87,6 @@ void setup(void)
   under.attach(UNDER_PIN);
   azimute.attach(AZIMUTE_PIN);
   elevation.attach(ELEVATION_PIN);
-
-  // fan
-  //top.begin();
-  //under.begin();
 
   // Stepper
   feeder.setMaxSpeed(1000.0);
