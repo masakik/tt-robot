@@ -6,6 +6,11 @@
 * Read the RPM of motors
 * use a stepper motor to feed balls to the spin motors
 
+## TODO
+
+* Programa de treino
+* Beeps
+
 ## Updates
 
 * Monitorando a voltagem da fonte de alimentação
@@ -28,3 +33,25 @@
 * display ??
 * segundo arduino ??
 * encoder rotativo ??
+
+## Features
+
+Robo lançador de bolas programável e cesta coletora realimentada. 
+
+Ajustes:
+* efeito (top e under spin);
+* velocidade do lancamento
+* direção (direita/esquerda, cima e baixo)
+* frequência (15 a 90 bolas por minuto).
+
+Outras características
+* Botão de pausa/continue com debounce (A0)
+* Todos os ajustes/controles são realizados pela porta Serial
+* Ajustes de posição da cabeça por meio de servos 
+* Lancamento de bola com ESC + motor brushless
+* Beep de indicação
+* Alimentação de 12V, conversor LM7805 para 5V
+* Alimentador de bolas por meio de disco girante horizontal com 4 bolas por girando
+* Contador de bolas lançadas
+* Monitoramento da qualidade da fonte de alimentação (A2)
+
