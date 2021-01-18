@@ -29,28 +29,8 @@ unsigned int ball_interval = 60000 / ball_freq;
 unsigned long ball_prev_time = millis();
 unsigned long ball_current_time;
 bool ball_prev_state = 0;
-int ball_counter = 0;
+unsigned int ball_counter = 0;
 bool ball_soft_pause = false;
-
-// Motores top e under spin ********************************
-
-// Sensor wire is plugged into port 2 on the Arduino.
-// For a list of available pins on your board,
-// please refer to: https://www.arduino.cc/en/Reference/AttachInterrupt
-//#define SENSOR_PIN 12
-//#define SENSOR_PIN2 13
-
-// Choose a threshold in milliseconds between readings.
-// A smaller value will give more updated results,
-// while a higher value will give more accurate and smooth readings
-//#define SENSOR_THRESHOLD 1000
-
-// PWM pin (4th on 4 pin fans)
-//#define TOP_PWM_PIN 9
-//#define UNDER_PWM_PIN 10
-
-//FanController top(SENSOR_PIN, SENSOR_THRESHOLD, TOP_PWM_PIN);
-//FanController under(SENSOR_PIN2, SENSOR_THRESHOLD, UNDER_PWM_PIN);
 
 // motor de passo ***************************************
 #define STEP_PIN 2
@@ -70,15 +50,26 @@ Timer timerPrintStatus;
 // Auxiliar para Serial.print
 char buffer[100];
 
+// PSU voltage measure
+#define VCC_MONITOR_PIN A2
+unsigned int vcc_monitor;
+float vcc_adj = 1.247; // vcc_multimetro/valor_lido
+
 
 // Programação ********************************************
 
 typedef struct {
   int top, under, elev, azim;
-} head;
+} Head;
 
-head pgm;
-head ps1_sp3_sn0 = {20, 20, 10, 10};
+Head pgm;
+Head ps1_sp3_sn0 = {20, 20, 10, 10};
+
+typedef struct {
+  float vcc_adj;
+} Config;
+
+Config cfg;
 
 // ********************************************************
 void setup(void)
@@ -86,6 +77,9 @@ void setup(void)
   // start serial port
   Serial.begin(9600);
   Serial.println("Table Tennis Robot");
+
+  // config
+  cfg.vcc_adj = vcc_adj;
 
   // programa
   pgm = ps1_sp3_sn0;
@@ -126,6 +120,9 @@ void setup(void)
   timerPrintStatus.setCallback(cmdStatus);
 
   TimerManager::instance().start();
+
+  // vcc monitor
+  pinMode(VCC_MONITOR_PIN, INPUT);
 }
 
 // Main function ***************************
@@ -209,10 +206,12 @@ void cmdFeederCont(int arg_cnt, char **args)
 
 void cmdStatus(int arg_cnt, char **args)
 {
-  sprintf(buffer, "run: %i; count %i; freq %i; top %i%%; under %i%%",
+  vccMonitor();
+  sprintf(buffer, "run: %i; count %i; freq %i; top %i%%; under %i%%; vcc %i",
           !ball_soft_pause, ball_counter, ball_freq,
           top.read(),
-          under.read()
+          under.read(),
+          vcc_monitor
          );
   Serial.println(buffer);
 }
@@ -220,6 +219,17 @@ void cmdStatus(int arg_cnt, char **args)
 void cmdStatus() {
   cmdStatus(0, 0);
 }
+
+void vccMonitor()
+{
+  unsigned int sum = 0;
+  for (int i = 0; i < 20; i++)
+  {
+    sum = sum + analogRead(VCC_MONITOR_PIN);
+  }
+  vcc_monitor = map(sum / 20, 0, 1023, 0, 13000) * vcc_adj;
+}
+
 
 /**
    Verifica o sensor de bola se foi lançado ou não
@@ -240,9 +250,10 @@ void pollBallSensor()
       ball_current_time = millis();
       ball_counter++;
 
-      int azimute_degree = random(60, 120);
-      azimute.write(azimute_degree);
-      Serial.println(azimute_degree);
+      int top_degree = random(0, 100);
+      top.write(top_degree);
+      under.write(top_degree);
+      Serial.println(top_degree);
     }
     else
     {
