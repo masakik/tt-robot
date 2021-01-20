@@ -1,9 +1,11 @@
-// Include the library
+// Included libraries from library manager
 #include <AccelStepper.h>
 #include <Cmd.h>
 #include <timer.h>
 #include <timerManager.h>
 #include <Servo.h>
+
+#include "Scmd.h"
 
 // Servos *************************************************
 #define TOP_PIN 9
@@ -41,6 +43,12 @@ AccelStepper feeder(AccelStepper::DRIVER, STEP_PIN, DIR_PIN);
 // Botão de pausa do feeder ******************************
 #define FEEDER_PAUSE_PIN A0     // pino do botão de pausar o ballFeeder
 #define FEEDER_PAUSE_DEBOUNCE 500 // debounce do botão de pause (ms)
+
+
+// Botão do buzzer
+#define BUZZER_PIN A3
+#include "Sound.h"
+Sound sound(BUZZER_PIN);
 
 // timers *************************************************
 Timer timerPrintStatus;
@@ -117,6 +125,9 @@ void setup(void)
 
   // vcc monitor
   pinMode(VCC_MONITOR_PIN, INPUT);
+
+  // Sound
+  sound.play(SOUND_MI, 1000);
 }
 
 // Main function ***************************
@@ -191,11 +202,13 @@ void cmdUnderSpin(int arg_cnt, char **args)
 void cmdFeederPause(int arg_cnt, char **args)
 {
   ball_soft_pause = true;
+  sound.pause();
 }
 
 void cmdFeederCont(int arg_cnt, char **args)
 {
   ball_soft_pause = false;
+  sound.pause();
 }
 
 void cmdStatus(int arg_cnt, char **args)
@@ -269,6 +282,7 @@ void pollPauseBtn()
     Serial.println("Botão de pausa pressionado");
     Serial.print("run ");
     Serial.println(!ball_soft_pause);
+    sound.pause();
   }
 }
 
