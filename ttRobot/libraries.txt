@@ -1,0 +1,9 @@
+https://github.com/joshmarinacci/CmdArduino.git
+https://github.com/brunocalou/Timer.git 
+FanController
+AccelStepper
+
+
+https://www.arduino.cc/reference/en/libraries/servo-hardware-pwm/
+
+https://github.com/neu-rah/ArduinoMenu
