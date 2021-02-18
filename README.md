@@ -25,10 +25,12 @@
 * Driver A4988 para motor de passo
 * Sensor infravermelho
 * Motor De Passo Nema 17 4,2 Kgf.cm 12v 17hs4401, eixo 5mm
-* Flange para motor de passo
+* Flange para motor de passo (disco inferior)
 * 2 servos MG996R
+* adaptador de disco plastico do servo: d20.5mm, parafuso soberba que veio junto do servo
 * 2 motores A2212/13T, 1000KV
 * 2 ESC HW30A
+* anel de EVA para o disco
 
 * display ??
 * segundo arduino ??
