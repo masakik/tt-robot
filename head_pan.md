@@ -2,7 +2,23 @@
 
 ## head pan
 
-* Impressão 17/2/2021
+todo: fixação dos BEC
+
+#### 22/2/2021
+
+* projeto da cabeça de lancamento
+* impressão em draft, cerca de 3h, cinza
+
+#### 19/2/2021
+
+* removido rebaixo do disco do servo superior, pois o suporte não estava ficando bom
+* alinhado altura do suporte do servo superior com a ponta da curva para não ter necessidade de suporte
+* criado suporte para servo de tilt na parte de trás. A ideia é ajudar a balancear um pouco o peso da parte frontal. Furo de 3mm e parafuso de 2.5mm com porca. Espaço da porca de 5mm
+* o acionamento do tilt será por barra pushrod 1.2mm no braço de plástico do servo e conector na outra extremidade
+
+
+#### Impressão 17/2/2021
+
 * usado suporte giroide: ele grudou bastante, talvez o triangulo mesmo
 * testado com suporte arvore: parece nao grudar bem, perdeu uma parte da peça ficando inutilizado em uns 10% da impressão.
 * suporte 45%: talvez o 60 mesmo
