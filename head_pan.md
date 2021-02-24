@@ -1,13 +1,25 @@
 ## Impressão 17/2/2021
 
-## head pan
 
 todo: fixação dos BEC
+
+## Conexao tilt
+
+#### 24/2/2021
+
+* rolamento MR74ZZ: externo 7mm x interno 4mm x espessura 2.5mm
+* pushrod terminal 1.3mm: furo 2mm
+* barra de ligação tipo Z de 1.2mm, distancia do eixo do servo: 32mm
+* canal de passagem de cabos
+
 
 #### 22/2/2021
 
 * projeto da cabeça de lancamento
 * impressão em draft, cerca de 3h, cinza
+* fixacao do motor: parafuso m3x10mm
+
+## head pan
 
 #### 19/2/2021
 
