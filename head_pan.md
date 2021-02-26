@@ -1,9 +1,22 @@
-## Impressão 17/2/2021
+# PARTES
 
+## Roda fake
 
-todo: fixação dos BEC
+#### 25/2/2021
 
-## Conexao tilt
+* externo com raio de 20mm e espessura de 5.9mm ficou folgado.
+* ajustado para 6 mas não impresso novamente
+
+#### 25/2/2021
+
+* impresso com raio menor. Ajustado na lixa
+
+## Conexão tilt
+
+#### 25/2/2021
+
+* o pushrod fica do lado oposto do duto de cabos
+* tem de resolver o espaço que fica quando o angulo é grande
 
 #### 24/2/2021
 
@@ -13,13 +26,21 @@ todo: fixação dos BEC
 * canal de passagem de cabos
 
 
+## Cabeça de lançamento
+
+#### 25/2/2021
+
+* rebaixado 2mm para centralizar o motor
+* disco de EVA agora com 40mm de diâmetro, o motor ficou 4mm mais próximo
+* feito recorte para saida da bola
+
 #### 22/2/2021
 
 * projeto da cabeça de lancamento
 * impressão em draft, cerca de 3h, cinza
 * fixacao do motor: parafuso m3x10mm
 
-## head pan
+## Cabeça de Pan
 
 #### 19/2/2021
 
@@ -44,13 +65,17 @@ todo: fixação dos BEC
 * essa parte da impressão não ficou boa. Talvez outro suporte
 
 
-## Anel inferior
+## Conexão Pan
 
-* Impressão 17/2/2021
+* A parte inferior tem de colocar um espaçador para fixação 
+
+#### 17/2/2021
+
 * Impresso sem suporte: ficou ruim a trava do meio mas não é grave
 * Precisa de suporte
 * o diametro livre ficou em 52 mm (1 mm de folga): ficou largo, acho que dá para deixar 0,5 mm de folga
 * Cura: h0.15/E200/M60/pla easyfill/vermelho/parede1.5/suporte
+
 
 ### Config
 
