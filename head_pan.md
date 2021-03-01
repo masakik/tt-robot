@@ -42,6 +42,12 @@
 
 ## Cabeça de Pan
 
+
+#### 1/3/2021
+
+* encurtado a curva para 20mm e entrada e saída para 9mm
+* suporte para servo de tilt simplificado, com parafuso de 3mm para não usar apoio de borracha
+
 #### 19/2/2021
 
 * removido rebaixo do disco do servo superior, pois o suporte não estava ficando bom
